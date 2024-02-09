@@ -71,8 +71,6 @@ func main() {
 
 	router := gin.Default()
 
-	fmt.Printf(samlSP.ServiceProvider.EntityID)
-
 	httpHandler := http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Hello from HTTP handler!")
 	})
@@ -80,37 +78,30 @@ func main() {
 	// Use the GinHandlerFromHTTPHandler middleware to convert the HTTP handler to a Gin handler
 	ginHandler := GinHandlerFromHTTPHandler(samlSP.RequireAccount(httpHandler))
 
-	// Define a Gin route that uses the converted Gin handler
-	router.GET("/hello", ginHandler)
-
-	// router.Use(func(c *gin.Context) {
-	// 	samlSP.ServeHTTP(c.Writer, c.Request)
-	// 	fmt.Printf("Testing\n")
-	// 	c.Next()
-	// })
-
+	
+	
+	// ACS endpoint for IdP redirection
 	router.POST("/saml/acs", func(c *gin.Context) {
-		// samlSP.ServeACS(c.Writer, c.Request)
 		samlSP.ServeACS(c.Writer, c.Request)
 		c.Redirect(http.StatusFound, samlSP.ServiceProvider.DefaultRedirectURI)
 		c.Abort()
 	})
 
+	// SAML entrypoint
 	router.GET("/saml", func(c *gin.Context) {
 		samlSP.HandleStartAuthFlow(c.Writer, c.Request)
 		c.Abort()
 	})
-
+	
 	// Protected route
 	router.GET("/test", func(c *gin.Context) {
 		fmt.Printf("In route\n")
 		c.JSON(200, gin.H{"message": "Protected resource"})
 	})
-
+	// Define a Gin route that uses the converted Gin handler
+	router.GET("/hello", ginHandler)
+	
 
 	// Run the application on port 8080
 	router.Run(":8000")
 }
-
-// Gin handler
-// HTTP handler
