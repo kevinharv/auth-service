@@ -10,30 +10,11 @@ import (
 	"net/url"
 	
 	"github.com/crewjam/saml/samlsp"
-	"github.com/gin-gonic/gin"
 )
 
-func GinHandlerFromHTTPHandler(httpHandler http.Handler) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Create a fake ResponseWriter to pass to the HTTP handler
-		fakeWriter := &fakeResponseWriter{c.Writer, http.StatusOK}
-		// Call the HTTP handler with the fake ResponseWriter
-		httpHandler.ServeHTTP(fakeWriter, c.Request)
-		// Set the status code from the fake ResponseWriter to the Gin context
-		c.Status(fakeWriter.status)
-	}
-}
 
-// A fakeResponseWriter is a simple wrapper around gin.ResponseWriter
-// that allows capturing the HTTP status code.
-type fakeResponseWriter struct {
-	gin.ResponseWriter
-	status int
-}
-
-// WriteHeader captures the HTTP status code.
-func (w *fakeResponseWriter) WriteHeader(code int) {
-	w.status = code
+func hello(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello, %s!", samlsp.AttributeFromContext(r.Context(), "emailAddress"))
 }
 
 func main() {
@@ -66,42 +47,11 @@ func main() {
 		URL:            *rootURL,
 		Key:            keyPair.PrivateKey.(*rsa.PrivateKey),
 		Certificate:    keyPair.Leaf,
-		IDPMetadata: idpMetadata,
+		IDPMetadata:    idpMetadata,
 	})
 
-	router := gin.Default()
-
-	httpHandler := http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Hello from HTTP handler!")
-	})
-
-	// Use the GinHandlerFromHTTPHandler middleware to convert the HTTP handler to a Gin handler
-	ginHandler := GinHandlerFromHTTPHandler(samlSP.RequireAccount(httpHandler))
-
-	
-	
-	// ACS endpoint for IdP redirection
-	router.POST("/saml/acs", func(c *gin.Context) {
-		samlSP.ServeACS(c.Writer, c.Request)
-		c.Redirect(http.StatusFound, samlSP.ServiceProvider.DefaultRedirectURI)
-		c.Abort()
-	})
-
-	// SAML entrypoint
-	router.GET("/saml", func(c *gin.Context) {
-		samlSP.HandleStartAuthFlow(c.Writer, c.Request)
-		c.Abort()
-	})
-	
-	// Protected route
-	router.GET("/test", func(c *gin.Context) {
-		fmt.Printf("In route\n")
-		c.JSON(200, gin.H{"message": "Protected resource"})
-	})
-	// Define a Gin route that uses the converted Gin handler
-	router.GET("/hello", ginHandler)
-	
-
-	// Run the application on port 8080
-	router.Run(":8000")
+    app := http.HandlerFunc(hello)
+	http.Handle("/hello", samlSP.RequireAccount(app))
+	http.Handle("/saml/", samlSP)
+	http.ListenAndServe(":8000", nil)
 }
