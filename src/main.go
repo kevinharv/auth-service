@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/crewjam/saml/samlsp"
 	"github.com/gin-gonic/gin"
@@ -42,6 +43,7 @@ func initSAMLSP() samlsp.Middleware {
 		Certificate: keyPair.Leaf,
 		IDPMetadata: idpMetadata,
 	})
+
 	handleErr(err, "Failed to setup SAML SP")
 	return *samlSP
 }
@@ -72,6 +74,10 @@ func main() {
 		sp.ServeACS(c.Writer, c.Request)
 		c.Redirect(301, "/hello")
 	})
+	r.GET("/saml/metadata", func(c *gin.Context) {
+		spMetadata := sp.ServiceProvider.Metadata()
+		c.XML(200, spMetadata)
+	})
 
 	// SAML Protected Routes
 	authorized := r.Group("/")
@@ -82,7 +88,14 @@ func main() {
 		})
 	}
 
-	r.Run(":8080")
+	s := &http.Server{
+		Addr:           ":8080",
+		Handler:        r,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	s.ListenAndServe()
 }
 
 func handleErr(e error, msg string) {
