@@ -8,50 +8,86 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	
+
 	"github.com/crewjam/saml/samlsp"
+	"github.com/gin-gonic/gin"
 )
 
+const (
+	serviceProviderKeyPath  = "cert/myservice.key"
+	serviceProviderCertPath = "cert/myservice.cert"
+	idpMetadataURL          = "https://mocksaml.com/api/saml/metadata"
+	rootURL                 = "http://localhost:8080"
+)
 
-func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, %s!", samlsp.AttributeFromContext(r.Context(), "emailAddress"))
+func initSAMLSP() samlsp.Middleware {
+	keyPair, err := tls.LoadX509KeyPair(serviceProviderCertPath, serviceProviderKeyPath)
+	handleErr(err, "Failed to load SAML SP X.509 Key Pair")
+
+	keyPair.Leaf, err = x509.ParseCertificate(keyPair.Certificate[0])
+	handleErr(err, "Failed to parse SAML SP Certificate")
+
+	idpMetadataURL, err := url.Parse(idpMetadataURL)
+	handleErr(err, "Failed to parse SAML IdP Metadata URL")
+
+	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient, *idpMetadataURL)
+	handleErr(err, "Failed to load SAML IdP Metadata")
+
+	rootURL, err := url.Parse(rootURL)
+	handleErr(err, "Failed to parse SAML SP root URL")
+
+	samlSP, err := samlsp.New(samlsp.Options{
+		URL:         *rootURL,
+		Key:         keyPair.PrivateKey.(*rsa.PrivateKey),
+		Certificate: keyPair.Leaf,
+		IDPMetadata: idpMetadata,
+	})
+	handleErr(err, "Failed to setup SAML SP")
+	return *samlSP
+}
+
+func samlMiddleware(sp *samlsp.Middleware) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		_, err := sp.Session.GetSession(c.Request)
+		if err != nil {
+			fmt.Printf("INFO: SAML Session Missing\n")
+			c.Redirect(http.StatusFound, "/saml/login")
+		}
+		c.Next()
+	}
 }
 
 func main() {
-	keyPair, err := tls.LoadX509KeyPair("cert/myservice.cert", "cert/myservice.key")
-	if err != nil {
-		panic(err) // TODO handle error
-	}
-	keyPair.Leaf, err = x509.ParseCertificate(keyPair.Certificate[0])
-	if err != nil {
-		panic(err) // TODO handle error
-	}
+	// Setup SAML Service Provider
+	sp := initSAMLSP()
 
-	// idpMetadataURL, err := url.Parse("https://samltest.id/saml/idp")
-	idpMetadataURL, err := url.Parse("https://mocksaml.com/api/saml/metadata")
-	if err != nil {
-		panic(err) // TODO handle error
-	}
-	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient,
-		*idpMetadataURL)
-	if err != nil {
-		panic(err) // TODO handle error
-	}
+	// Setup Gin Router
+	r := gin.Default()
 
-	rootURL, err := url.Parse("http://localhost:8000")
-	if err != nil {
-		panic(err) // TODO handle error
-	}
-
-	samlSP, _ := samlsp.New(samlsp.Options{
-		URL:            *rootURL,
-		Key:            keyPair.PrivateKey.(*rsa.PrivateKey),
-		Certificate:    keyPair.Leaf,
-		IDPMetadata:    idpMetadata,
+	// SAML Routes
+	r.GET("/saml/login", func(c *gin.Context) {
+		sp.HandleStartAuthFlow(c.Writer, c.Request)
+	})
+	r.POST("/saml/acs", func(c *gin.Context) {
+		sp.ServeACS(c.Writer, c.Request)
+		c.Redirect(301, "/hello")
 	})
 
-    app := http.HandlerFunc(hello)
-	http.Handle("/hello", samlSP.RequireAccount(app))
-	http.Handle("/saml/", samlSP)
-	http.ListenAndServe(":8000", nil)
+	// SAML Protected Routes
+	authorized := r.Group("/")
+	authorized.Use(samlMiddleware(&sp)) 
+	{		
+		authorized.GET("/hello", func(c *gin.Context) {
+			c.JSON(200, gin.H{"hello": "world"})
+		})
+	}
+
+	r.Run(":8080")
+}
+
+func handleErr(e error, msg string) {
+	if e != nil {
+		fmt.Printf("ERROR: %s\n", msg)
+		panic(e)
+	}
 }

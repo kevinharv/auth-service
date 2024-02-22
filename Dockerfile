@@ -4,13 +4,13 @@
 ARG OS_VERSION=latest
 ARG VERSION="0.1.0"
 
+FROM --platform=amd64 debian:${OS_VERSION}
+
 LABEL application="Example Application"
 LABEL description="Example Dockerfile for template."
 LABEL customer="None"
 LABEL maintainer="K. Harvey"
 LABEL version=${VERSION}
-
-FROM --platform=amd64 debian:${OS_VERSION}
 
 WORKDIR /app
 COPY . .
