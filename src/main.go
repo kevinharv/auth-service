@@ -78,6 +78,10 @@ func main() {
 		spMetadata := sp.ServiceProvider.Metadata()
 		c.XML(200, spMetadata)
 	})
+	r.GET("/saml/logout", func(c *gin.Context) {
+		sp.Session.DeleteSession(c.Writer, c.Request)
+		c.JSON(200, gin.H{"status": "ok"})
+	})
 
 	// SAML Protected Routes
 	authorized := r.Group("/")
