@@ -34,9 +34,10 @@ services:
 
   database:
     image: postgres:16
-    container_name: Example Application Database
+    container_name: db
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - dbdata:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d/
     env_file:
       - .env.db
     healthcheck:
@@ -47,5 +48,5 @@ services:
       start_period: 60s  
 
 volumes:
-  db_data:
-    name: Database Volume
+  dbdata:
+    name: db_volume
