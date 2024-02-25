@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"kevinharv/auth-service/src/db"
 	"net/http"
 	"net/url"
 	"time"
@@ -60,6 +61,20 @@ func samlMiddleware(sp *samlsp.Middleware) gin.HandlerFunc {
 }
 
 func main() {
+
+	db, err := db.Connect()
+	if err != nil {
+		panic(err)
+	}
+
+	rows, err := db.Query("SELECT * FROM users;")
+	if err != nil {
+		panic(err)
+	}
+
+	defer rows.Close()
+
+
 	// Setup SAML Service Provider
 	sp := initSAMLSP()
 
@@ -85,8 +100,8 @@ func main() {
 
 	// SAML Protected Routes
 	authorized := r.Group("/")
-	authorized.Use(samlMiddleware(&sp)) 
-	{		
+	authorized.Use(samlMiddleware(&sp))
+	{
 		authorized.GET("/hello", func(c *gin.Context) {
 			c.JSON(200, gin.H{"hello": "world"})
 		})
