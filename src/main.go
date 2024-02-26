@@ -1,67 +1,19 @@
 package main
 
 import (
-	"context"
-	"crypto/rsa"
-	"crypto/tls"
-	"crypto/x509"
-	"fmt"
-	"kevinharv/auth-service/src/db"
 	"net/http"
-	"net/url"
 	"time"
 
-	"github.com/crewjam/saml/samlsp"
+	"kevinharv/auth-service/src/db"
+	"kevinharv/auth-service/src/middleware"
+	"kevinharv/auth-service/src/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	serviceProviderKeyPath  = "cert/myservice.key"
-	serviceProviderCertPath = "cert/myservice.cert"
-	idpMetadataURL          = "https://mocksaml.com/api/saml/metadata"
-	rootURL                 = "http://localhost:8080"
-)
 
-func initSAMLSP() samlsp.Middleware {
-	keyPair, err := tls.LoadX509KeyPair(serviceProviderCertPath, serviceProviderKeyPath)
-	handleErr(err, "Failed to load SAML SP X.509 Key Pair")
-
-	keyPair.Leaf, err = x509.ParseCertificate(keyPair.Certificate[0])
-	handleErr(err, "Failed to parse SAML SP Certificate")
-
-	idpMetadataURL, err := url.Parse(idpMetadataURL)
-	handleErr(err, "Failed to parse SAML IdP Metadata URL")
-
-	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient, *idpMetadataURL)
-	handleErr(err, "Failed to load SAML IdP Metadata")
-
-	rootURL, err := url.Parse(rootURL)
-	handleErr(err, "Failed to parse SAML SP root URL")
-
-	samlSP, err := samlsp.New(samlsp.Options{
-		URL:         *rootURL,
-		Key:         keyPair.PrivateKey.(*rsa.PrivateKey),
-		Certificate: keyPair.Leaf,
-		IDPMetadata: idpMetadata,
-	})
-
-	handleErr(err, "Failed to setup SAML SP")
-	return *samlSP
-}
-
-func samlMiddleware(sp *samlsp.Middleware) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		_, err := sp.Session.GetSession(c.Request)
-		if err != nil {
-			fmt.Printf("INFO: SAML Session Missing\n")
-			c.Redirect(http.StatusFound, "/saml/login")
-		}
-		c.Next()
-	}
-}
 
 func main() {
-
 	db, err := db.Connect()
 	if err != nil {
 		panic(err)
@@ -76,7 +28,7 @@ func main() {
 
 
 	// Setup SAML Service Provider
-	sp := initSAMLSP()
+	sp := utils.InitSAMLSP()
 
 	// Setup Gin Router
 	r := gin.Default()
@@ -100,7 +52,7 @@ func main() {
 
 	// SAML Protected Routes
 	authorized := r.Group("/")
-	authorized.Use(samlMiddleware(&sp))
+	authorized.Use(middleware.SAMLMiddleware(&sp))
 	{
 		authorized.GET("/hello", func(c *gin.Context) {
 			c.JSON(200, gin.H{"hello": "world"})
@@ -115,11 +67,4 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 	s.ListenAndServe()
-}
-
-func handleErr(e error, msg string) {
-	if e != nil {
-		fmt.Printf("ERROR: %s\n", msg)
-		panic(e)
-	}
 }
