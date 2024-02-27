@@ -46,9 +46,18 @@ func InsertAuthMeth() {
 		rowCount++
 	}
 
+	rows, err = db.Query("SELECT idp_id FROM saml_idps LIMIT 1")
+	utils.HandleErr(err, "Failed to query for IdPs in test.")
+	defer rows.Close()
+
+	var idp_id string
+	for rows.Next() {
+		rows.Scan(&idp_id)
+	}
+
 	// If not, insert IdP
 	if rowCount == 0 {
-		_, err := db.Exec("INSERT INTO auth_methods (auth_name) VALUES ($1)", "SAML 2.0")
+		_, err := db.Exec("INSERT INTO auth_methods (auth_name, isSAML, saml_idp_id) VALUES ($1, $2, $3)", "SAML 2.0", true, idp_id)
 		if err != nil {
 			panic(err)
 		}
@@ -79,7 +88,6 @@ func InsertUsers() {
 	lname := "McTestFace"
 	mi := "T"
 	displayName := "McTestFace, Testy"
-
 
 	// Check if IdP exists
 	rows, err := db.Query("SELECT auth_id FROM auth_methods")

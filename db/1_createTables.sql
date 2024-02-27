@@ -15,13 +15,18 @@ CREATE TABLE IF NOT EXISTS saml_idps (
 CREATE TABLE IF NOT EXISTS auth_methods (
     auth_id     UUID            UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     auth_name   VARCHAR(128)    UNIQUE NOT NULL,
+    isSAML      BOOLEAN         DEFAULT(FALSE),
+    isMSFT      BOOLEAN         DEFAULT(FALSE),
+    isGOOG      BOOLEAN         DEFAULT(FALSE),
+    saml_idp_id UUID,
     created_at  TIMESTAMP       DEFAULT now(),
     updated_at  TIMESTAMP       DEFAULT now(),
 
-    PRIMARY KEY (auth_id)
+    PRIMARY KEY (auth_id),
+    FOREIGN KEY (saml_idp_id) REFERENCES saml_idps(idp_id)
 );
 
--- USERS
+-- Users
 CREATE TABLE IF NOT EXISTS users (
     user_id             UUID            UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     userPrincipalName   VARCHAR(253)    UNIQUE NOT NULL,

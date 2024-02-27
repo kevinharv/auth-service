@@ -15,6 +15,7 @@ import (
 	"github.com/crewjam/saml/samlsp"
 )
 
+// TODO - Parameterize key, cert, rootURL with environment variables
 const (
 	serviceProviderKeyPath  = "cert/myservice.key"
 	serviceProviderCertPath = "cert/myservice.cert"

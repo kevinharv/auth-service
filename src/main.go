@@ -12,15 +12,16 @@ import (
 )
 
 func main() {
+	// Insert test data into the database
 	tests.InsertIDP()
 	tests.InsertAuthMeth()
 	tests.InsertUsers()
 
-	// Setup SAML Service Provider
-	sp := utils.InitSAMLSP()
-
 	// Setup Gin Router
 	r := gin.Default()
+
+	// Setup SAML Service Provider
+	sp := utils.InitSAMLSP()
 
 	// SAML Routes
 	r.GET("/saml/login", func(c *gin.Context) {
@@ -49,7 +50,7 @@ func main() {
 	}
 
 	s := &http.Server{
-		Addr:           ":8080",
+		Addr:           ":8000",
 		Handler:        r,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
