@@ -1,6 +1,6 @@
 -- SAML IdPs
 CREATE TABLE IF NOT EXISTS saml_idps (
-    idp_id          UUID            UNIQUE NOT NULL,
+    idp_id          UUID            UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     domain          VARCHAR(63)     UNIQUE NOT NULL,
     metadata_url    VARCHAR(253)    NOT NULL,
     is_enabled      BOOLEAN         DEFAULT(TRUE),
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS saml_idps (
 
 -- Authentication Methods
 CREATE TABLE IF NOT EXISTS auth_methods (
-    auth_id     UUID            UNIQUE NOT NULL,
+    auth_id     UUID            UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     auth_name   VARCHAR(128)    UNIQUE NOT NULL,
     created_at  TIMESTAMP,
     updated_at  TIMESTAMP,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS auth_methods (
 
 -- USERS
 CREATE TABLE IF NOT EXISTS users (
-    user_id             UUID            UNIQUE NOT NULL,
+    user_id             UUID            UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     userPrincipalName   VARCHAR(253)    UNIQUE NOT NULL,
     auth_method         UUID,
     first_name          VARCHAR(128),

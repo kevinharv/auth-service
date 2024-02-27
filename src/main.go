@@ -19,12 +19,7 @@ func main() {
 		panic(err)
 	}
 
-	rows, err := db.Query("SELECT * FROM users;")
-	if err != nil {
-		panic(err)
-	}
-
-	defer rows.Close()
+	defer db.Close()
 
 
 	// Setup SAML Service Provider
