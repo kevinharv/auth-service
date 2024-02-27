@@ -13,6 +13,8 @@ import (
 
 func main() {
 	tests.InsertIDP()
+	tests.InsertAuthMeth()
+	tests.InsertUsers()
 
 	// Setup SAML Service Provider
 	sp := utils.InitSAMLSP()
