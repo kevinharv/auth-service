@@ -1,11 +1,12 @@
 -- SAML IdPs
 CREATE TABLE IF NOT EXISTS saml_idps (
     idp_id          UUID            UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    display_name    VARCHAR(64)     UNIQUE NOT NULL,
     domain          VARCHAR(63)     UNIQUE NOT NULL,
     metadata_url    VARCHAR(253)    NOT NULL,
     is_enabled      BOOLEAN         DEFAULT(TRUE),
-    created_at      TIMESTAMP,
-    updated_at      TIMESTAMP,
+    created_at      TIMESTAMP       DEFAULT now(),
+    updated_at      TIMESTAMP       DEFAULT now(),
 
     PRIMARY KEY (idp_id)
 );
@@ -14,8 +15,8 @@ CREATE TABLE IF NOT EXISTS saml_idps (
 CREATE TABLE IF NOT EXISTS auth_methods (
     auth_id     UUID            UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     auth_name   VARCHAR(128)    UNIQUE NOT NULL,
-    created_at  TIMESTAMP,
-    updated_at  TIMESTAMP,
+    created_at  TIMESTAMP       DEFAULT now(),
+    updated_at  TIMESTAMP       DEFAULT now(),
 
     PRIMARY KEY (auth_id)
 );
@@ -29,8 +30,8 @@ CREATE TABLE IF NOT EXISTS users (
     last_name           VARCHAR(128),
     middle_init         CHAR(1),
     display_name        VARCHAR(64),
-    created_at          TIMESTAMP,
-    updated_at          TIMESTAMP,
+    created_at          TIMESTAMP       DEFAULT now(),
+    updated_at          TIMESTAMP       DEFAULT now(),
 
     PRIMARY KEY (user_id),
     FOREIGN KEY (auth_method) REFERENCES auth_methods(auth_id)

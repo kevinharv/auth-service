@@ -4,23 +4,15 @@ import (
 	"net/http"
 	"time"
 
-	"kevinharv/auth-service/src/db"
 	"kevinharv/auth-service/src/middleware"
+	"kevinharv/auth-service/src/tests"
 	"kevinharv/auth-service/src/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-
-
 func main() {
-	db, err := db.Connect()
-	if err != nil {
-		panic(err)
-	}
-
-	defer db.Close()
-
+	tests.InsertIDP()
 
 	// Setup SAML Service Provider
 	sp := utils.InitSAMLSP()
