@@ -1,14 +1,23 @@
-# Example Application Template 
-Simple template to scaffold projects of various types.
+# Authentication Microservice
 
-## Purpose
-Jumping off point for building modern applications. Basic database and build environment configured.
+## Logic
+1. POST to /login the login name (UPN/email)
+1. Lookup authenitcation strategy for user (Microsoft OAuth | Google OAuth | SAML 2.0)
+1. Start authentication flow with appropriate IdP
+    1. Store OAuth token if applicable
+1. Generate JWT with user information, permissions, expiration time
+1. Return JWT for use with subsequent requests
+1. Expose endpoints for services to check authentication
 
-## What's Included
-- PostgreSQL Database
-- GitHub Actions CI (CD coming!)
-- Simple Dockerfile
-- Docker Compose Scaffolding
+## Routes
+Below are the routes exposed by the service.
 
-## Use
-Bring your own application and modify the files here to match.
+POST **/saml/acs**
+
+GET **/saml/metadata**
+
+POST /login
+
+GET /logout
+
+GET /user/\[attributes]

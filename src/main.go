@@ -40,6 +40,25 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+
+	r.GET("/token", func(c *gin.Context) {
+		jwt, err := utils.GenerateJWT("test@test.com")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create JWT"})
+		}
+		c.JSON(http.StatusOK, gin.H{"token": jwt})
+	})
+
+	jwtd := r.Group("/jwt")
+	jwtd.Use(middleware.JWTMiddleware())
+	{
+		jwtd.GET("/protected", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"route": "yay"})
+		})
+	}
+
+
+
 	// SAML Protected Routes
 	authorized := r.Group("/")
 	authorized.Use(middleware.SAMLMiddleware(&sp))
