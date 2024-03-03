@@ -7,20 +7,11 @@ package models
 import (
 	"kevinharv/auth-service/src/db"
 	"kevinharv/auth-service/src/utils"
+    "kevinharv/auth-service/src/structs"
 )
 
-type User struct {
-	userID            string
-	userPrincipalName string
-	authMethod        string
-	firstName         string
-	lastName          string
-	middleInit        string
-	displayName       string
-}
-
 // Create User
-func CreateUser(u *User) {
+func CreateUser(u structs.User) {
 	db, err := db.Connect()
 	utils.HandleErr(err, "Failed to connect to DB.")
 	defer db.Close()
@@ -41,7 +32,7 @@ func DeleteUser(userID string) {
 }
 
 // Get User by ID
-func GetUser(userID string) User {
+func GetUser(userID string) structs.User {
 	db, err := db.Connect()
 	utils.HandleErr(err, "Failed to connect to DB.")
 	defer db.Close()
@@ -50,7 +41,7 @@ func GetUser(userID string) User {
 	utils.HandleErr(err, "Failed to get user from DB.")
 	defer rows.Close()
 
-	var u User
+	var u structs.User
 
 	for rows.Next() {
 		rows.Scan(&u.userID, &u.userPrincipalName, &u.authMethod, &u.firstName, &u.lastName, &u.middleInit, &u.displayName)
@@ -60,7 +51,7 @@ func GetUser(userID string) User {
 }
 
 // Get User by UPN
-func GetUserByUPN(upn string) User {
+func GetUserByUPN(upn string) structs.User {
 	db, err := db.Connect()
 	utils.HandleErr(err, "Failed to connect to DB.")
 	defer db.Close()
@@ -69,7 +60,7 @@ func GetUserByUPN(upn string) User {
 	utils.HandleErr(err, "Failed to get user from DB.")
 	defer rows.Close()
 
-	var u User
+	var u structs.User
 
 	for rows.Next() {
 		rows.Scan(&u.userID, &u.userPrincipalName, &u.authMethod, &u.firstName, &u.lastName, &u.middleInit, &u.displayName)

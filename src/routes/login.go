@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"fmt"
 	"os"
+    // "kevinharv/auth-service/src/structs"
+    "kevinharv/auth-service/src/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +26,9 @@ func HandleLogin() gin.HandlerFunc {
 			return
 		}
 
-        fmt.Printf("User Auth Method: %s", upn)
+        u := models.GetUserByUPN(upn)
+
+        fmt.Printf("User Auth Method: %s", u.authMethod)
 
         // Lookup auth method in DB
         // If SAML
