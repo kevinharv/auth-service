@@ -16,6 +16,7 @@ import (
 )
 
 // TODO - Parameterize key, cert, rootURL with environment variables
+// TODO - IdP metadata as parameter - pass config from DB
 const (
 	serviceProviderKeyPath  = "cert/myservice.key"
 	serviceProviderCertPath = "cert/myservice.cert"
