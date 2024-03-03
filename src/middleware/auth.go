@@ -9,8 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 
 func JWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Get Authorization Header
 		authorizationHeader := c.Request.Header.Get("Authorization")
 		if authorizationHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token not supplied in request."})
@@ -18,17 +20,18 @@ func JWTMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		headerStringArr := strings.Split(authorizationHeader, " ")
-		if len(headerStringArr) < 2 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Malformed authorization header"})
+		// Check for OAuth mechanism spec
+		if !strings.HasPrefix(authorizationHeader, "Bearer ") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Malformed Authorization header"})
 			c.Abort()
 			return
 		}
 
-		reqJWT := headerStringArr[1]
-		fmt.Printf("DEBUG: Request JWT: %s\n", reqJWT)
+		// Extract the token from the header
+		reqToken := strings.TrimPrefix(authorizationHeader, "Bearer ")
 
-		token, err := utils.ParseToken(reqJWT)
+		// Parse the token, check for validity
+		token, err := utils.ParseToken(reqToken)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Token"})
 			c.Abort()
@@ -36,18 +39,13 @@ func JWTMiddleware() gin.HandlerFunc {
 
 		}
 
+		// Get the claims - will can carry user info and authorization info
 		claims, err := utils.ParseClaims(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Claims"})
 			c.Abort()
 			return
 		}
-		
-		/*
-			TODO - Finish Implementation
-			- get auth method by user claim
-			- direct to auth method
-		*/
 
 		fmt.Printf("DEBUG: userPrincipalName: %s\n", claims.UserPrincipalName)
 	}
