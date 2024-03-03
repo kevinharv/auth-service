@@ -2,7 +2,7 @@
 This module contains database models for user management.
 */
 
-package user
+package models
 
 import (
 	"kevinharv/auth-service/src/db"

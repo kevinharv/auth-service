@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"kevinharv/auth-service/src/utils"
 	"net/http"
+	"fmt"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -24,14 +24,28 @@ func HandleLogin() gin.HandlerFunc {
 			return
 		}
 
-		tk, err := utils.GenerateJWT("test@test.com")
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			return
-		}
+        fmt.Printf("User Auth Method: %s", upn)
+
+        // Lookup auth method in DB
+        // If SAML
+            // Load SP
+            // Handle Start Auth Flow
+            // IN ACS - create and issue token
+
+        // If !SAML
+            // Handle OAuth for MSFT or GOOG
+            // For now, just exit with internal server error
+        
+
+        c.Status(http.StatusOK)
+		//tk, err := utils.GenerateJWT("test@test.com")
+		//if err != nil {
+		//	c.Status(http.StatusInternalServerError)
+		//	return
+		//}
 
 		// Lookup auth method by UPN
 		// Direct to auth method
-		c.JSON(http.StatusOK, gin.H{"token": tk})
+		//c.JSON(http.StatusOK, gin.H{"token": tk})
 	}
 }
